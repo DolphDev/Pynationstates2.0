@@ -47,7 +47,7 @@ def response_check(data):
             )
 
 class APIRequest:
-	"""Data Class for requests"""
+	"""Data Class for this library"""
 	def __init__(self, url, api_name, shards, version):
 		self.url = url
 		self.api_name = api_name
@@ -63,23 +63,33 @@ class NationstatesAPI:
 
 		self.api_mother = api_mother
 
-	def _ratelimitcheck
+	def _ratelimitcheck(self):
+		pass
 
-	def _request(self, url):
+	def _prepare_request(self, url, api_name, shards, version):
+		return APIRequest(url, api_name, shards, version)
+
+
+	def _request(self, req):
 		sess = self.api_mother.session
 
-		return sess.get(url)
+		return sess.get(req.url)
 
 
 	def _handle_request(self, response, request_meta):
 		result = {
 			"response": response,
-			"xml": response.text
-			"bs4": BeautifulSoup(response.text, "lxml")
+			"xml": response.text,
+			"bs4": BeautifulSoup(response.text, "lxml"),
+			"request": request_meta,
+			"status": response.status_code,
+			"headers": response.headers,
 		}
-		response_check(data)
+		# Should this be here? Perhaps an argument
+		response_check(result)
+		self.api_mother.rate_limit()
 
-		 return
+		return result
 
 		#xmltodict
 
@@ -95,7 +105,17 @@ class Nation(NationstatesAPI):
 	
 	def __init__(self, nation_name, api_mother):
 		self.nation_name = nation_name
+		super().__init__(api_mother)
 
+	def request(self, shards=[]):
+		url = self.url(shards)
+		req = self._prepare_request(url, 
+				self.api_name,
+				self.nation_name,
+				shards)
+		resp = self._request(req)
+		result = self._handle_request(resp, req)
+		return result
 
 	def url(self, shards):
 		return self._url(self.api_name, 
@@ -104,12 +124,28 @@ class Nation(NationstatesAPI):
 			self.api_mother.version)
 
 class Api:
-	def __init__(self, user_agent, version="9"):
+	def __init__(self, user_agent, version="9",
+		ratelimit_sleep=False):
 		self.user_agent = user_agent
 		self.version = version
 		self.session = Session()
+		self.ratelimitsleep = ratelimit_sleep
 		self.xlrs = 0
 
-	def rate_limit(self, xlrs):
+	def rate_limit(self, new_xlrs):
 		# Raises an exception if RateLimit is either banned 
 		pass
+
+	def Nation(self, name):
+		return Nation(name, self)
+
+	def Region(self):
+		pass
+
+	def World(self):
+		pass
+
+test = Api("TEST")
+
+n = test.Nation("testlandia")
+print(n.request())

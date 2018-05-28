@@ -209,7 +209,7 @@ def gen_url(api, shards, version, API_URL=API_URL):
         url = Url(API_URL).query(**({api[0]: api[1]}))
     else:
         url = Url(API_URL)
-    if shard:
+    if shards:
         url.query(q=tuple(shard_generator(shards)))
         url.query(
             **shard_object_extract(shards))
