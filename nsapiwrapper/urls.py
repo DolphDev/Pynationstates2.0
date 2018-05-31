@@ -100,10 +100,6 @@ def shard_object_extract(shards):
     return store
 
 
-
-
-
-
 def shard_generator(shards):
     for shard in shards:
         if isinstance(shard, str):
