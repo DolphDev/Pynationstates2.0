@@ -63,8 +63,15 @@ class RateLimit:
         """Adds timestamp to rltime"""
         self.rltime = [timestamp()] + self.rltime
 
+class NSBaseError(Exception):
+	"""Base Error for all custom exceptions"""
 
-class NSServerBaseException(Exception):
+	pass
+
+class RateLimitReached(NSBaseError):
+	"""Rate Limit was reached"""
+
+class NSServerBaseException(NSBaseError):
     """Exceptions that the server returns"""
     pass
 
@@ -112,9 +119,10 @@ def response_check(data):
 
 class APIRequest:
     """Data Class for this library"""
-    def __init__(self, url, api_name, shards, version):
+    def __init__(self, url, api_name, api_value, shards, version):
         self.url = url
         self.api_name = api_name
+        self.api_value = api_value
         self.shards = shards
         self.version = version
 
@@ -130,14 +138,16 @@ class NationstatesAPI:
     def _ratelimitcheck(self):
         rlflag = self.api_mother.rl_can_request()
 
-    def _prepare_request(self, url, api_name, shards, version):
-        return APIRequest(url, api_name, shards, version)
+    def _prepare_request(self, url, api_name, api_value, shards, version):
+        return APIRequest(url, api_name, api_value, shards, version)
 
-    def _request(self, req):
+    def _request_api(self, req):
 
         sess = self.api_mother.session
 
         return sess.get(req.url)
+
+
 
     def _handle_request(self, response, request_meta):
         result = {
@@ -159,6 +169,17 @@ class NationstatesAPI:
             shards=shards,
             version=version)
 
+    def _request(self, shards, url, api_name, value_name, version):
+    	# This relies on .url() being defined by child classes
+        url = self.url(shards)
+        req = self._prepare_request(url, 
+                api_name,
+                value_name,
+                shards, version)
+        resp = self._request_api(req)
+        result = self._handle_request(resp, req)
+        return result
+
 
 class Nation(NationstatesAPI):
     api_name = "nation"
@@ -169,19 +190,34 @@ class Nation(NationstatesAPI):
 
     def request(self, shards=[]):
         url = self.url(shards)
-        req = self._prepare_request(url, 
-                self.api_name,
-                self.nation_name,
-                shards)
-        resp = self._request(req)
-        result = self._handle_request(resp, req)
-        return result
+        return self._request(shards, url, self.api_name, self.nation_name, self.api_mother.version)
 
     def url(self, shards):
         return self._url(self.api_name, 
             self.nation_name,
             shards,
             self.api_mother.version)
+
+
+class Region: 
+    api_name = "region"
+
+    def __init__(self, nation_name, api_mother):
+        self.nation_name = nation_name
+        super().__init__(api_mother)
+
+    def request(self, shards=[]):
+        url = self.url(shards)
+        return self._request(shards, url, self.api_name, self.nation_name, self.api_mother.version)
+
+    def url(self, shards):
+        return self._url(self.api_name, 
+            self.nation_name,
+            shards,
+            self.api_mother.version)
+
+class World(NationstatesAPI): 
+	api_name = "world"
 
 class Api:
     def __init__(self, user_agent, version="9",
@@ -202,22 +238,20 @@ class Api:
         self.xrls = new_xrls
         self.rlobj.add_timestamp()
 
-    def rl_can_request(self):
-        return self.ratelimitcheck(xrls=self.xlrs)
+    def check_ratelimit(self):
+        rlflag = self.rlobj.ratelimitcheck(xrls=self.xrls)
+        if not rlflag:
+        	raise RateLimitReached("The Rate Limit was too close the API limit to safely handle this request")
 
     def Nation(self, name):
         return Nation(name, self)
 
-    def Region(self):
-        pass
+    def Region(self, name):
+        return Region(name, self)
 
     def World(self):
-        pass
+        return World(self)
 
-test = Api("NATIONSTATES API WRAPPER V2 Dev: The United Island Tribes")
+    def WA(self, chamber):
+    	return WA(chamber, self)
 
-n = test.Nation("The United Island Tribes")
-for row in range(5):
-    n.request()
-    print(test.xrls)
-    print(test.rlobj.rltime)
