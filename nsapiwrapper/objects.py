@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 from time import time as timestamp
-
-from .exceptions import APIError, APIRateLimitBan, ConflictError, Forbidden, NotFound
+from .exceptions import APIError, APIRateLimitBan, BadRequest, CloudflareServerError, ConflictError, Forbidden, InternalServerError, NotFound
                         
 from .urls import gen_url, Shard
 
@@ -11,7 +10,7 @@ def response_check(data):
     if data["status"] == 409:
         raise ConflictError("Nationstates API has returned a Conflict Error.")
     if data["status"] == 400:
-        raise APIError(xmlsoup.h1.text)
+        raise BadRequest(xmlsoup.h1.text)
     if data["status"] == 403:
         raise Forbidden(xmlsoup.h1.text)
     if data["status"] == 404:
@@ -25,9 +24,9 @@ def response_check(data):
         raise APIRateLimitBan(message)
     if data["status"] == 500:
         message = ("Nationstates API has returned a Internal Server Error")
-        raise APIError(message)
+        raise InternalServerError(message)
     if data["status"] == 521:
-        raise APIError(
+        raise CloudflareServerError(
             "Error 521: Cloudflare did not recieve a response from nationstates"
             )
 
@@ -118,6 +117,7 @@ class NationstatesAPI:
         return APIRequest(url, api_name, api_value, shards, version, request_headers)
 
     def _request_api(self, req):
+        self.api_mother.check_ratelimit()
         sess = self.api_mother.session
         headers = {"User-Agent":self.api_mother.user_agent}
         headers.update(req.custom_headers)

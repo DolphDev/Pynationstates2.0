@@ -1,6 +1,7 @@
 from ezurl import Url
 from collections import OrderedDict
 
+API_URL = "www.nationstates.net/cgi-bin/api.cgi"
 
 def shard_object_extract(shards):
     store = dict()
@@ -105,10 +106,6 @@ class Shard(object):
 
     def _get_main_value(self):
         return self.shardname
-
-
-API_URL = "www.nationstates.net/cgi-bin/api.cgi"
-
 
 def gen_url(api, shards, version, API_URL=API_URL):
     if not api[0] == "world":
