@@ -1,16 +1,21 @@
 from requests import Session
+from time import sleep
 from .objects import RateLimit, NationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI
 from .exceptions import RateLimitReached
 
 class Api:
     def __init__(self, user_agent, version="9",
         ratelimit_sleep=False,
+        ratelimit_sleep_time=4,
         ratelimit_max=48,
-        ratelimit_within=30):
+        ratelimit_within=30,
+        ratelimit_maxsleeps=10):
         self.user_agent = user_agent
         self.version = version
         self.session = Session()
         self.ratelimitsleep = ratelimit_sleep
+        self.ratelimitsleep_time = ratelimit_sleep_time
+        self.ratelimitsleep_maxsleeps = ratelimit_maxsleeps
         self.ratelimit_max = ratelimit_max
         self.ratelimit_within = ratelimit_within
         self.xrls = 0
@@ -21,12 +26,26 @@ class Api:
         self.xrls = int(new_xrls)
         self.rlobj.add_timestamp()
 
-    def check_ratelimit(self):
-        rlflag = self.rlobj.ratelimitcheck(xrls=self.xrls,
+    def _check_ratelimit(self):
+        return self.rlobj.ratelimitcheck(xrls=self.xrls,
                 amount_allow=self.ratelimit_max,
                 within_time=self.ratelimit_within)
+
+    def check_ratelimit(self):
+        rlflag = self.check_ratelimit()
         if not rlflag:
-        	raise RateLimitReached("The Rate Limit was too close the API limit to safely handle this request")
+            if self.ratelimit_sleep:
+                n = 0
+                while self._check_ratelimit():
+                    n = n + 1
+                    if n >= self.ratelimit_maxsleeps:
+                        break                        
+                    sleep(self.ratelimitsleep_time)
+                else:
+                    return True
+            raise RateLimitReached("The Rate Limit was too close the API limit to safely handle this request")
+        else:
+            return True
 
     def Nation(self, name):
         return NationAPI(name, self)

@@ -51,7 +51,7 @@ class RateLimit:
         self.rlref = val
 
     def ratelimitcheck(self, amount_allow=48, within_time=30, xrls=0):
-        """Checks if PyNationstates needs pause to prevent api banning"""
+        """Checks if nsapiwrapper needs pause to prevent api banning"""
 
         if xrls >= amount_allow:
             pre_raf = xrls - (xrls - len(self.rltime))
