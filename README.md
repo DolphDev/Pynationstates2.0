@@ -1,5 +1,3 @@
 # nsapiwrapper
 
-A more basic api wrapper for nationstates that will eventually be used by the proper `nationstates` library. This is built to be rather basic and simple to build and not bug prone.
-
-Currently a work in progress, not in any usable state
+This is a pretty simple wrapper of the [Nationstates API](https://www.nationstates.net/pages/api.html), if you want to use the nationstates api in a more high level and more documented way see [nationstates](https://github.com/DolphDev/pynationstates) which actually wraps arounds this library.
