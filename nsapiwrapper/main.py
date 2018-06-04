@@ -1,6 +1,6 @@
 from requests import Session
 from time import sleep
-from .objects import RateLimit, NationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI
+from .objects import RateLimit, NationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI, TelegramAPI
 from .exceptions import RateLimitReached
 
 class Api:
@@ -9,7 +9,8 @@ class Api:
         ratelimit_sleep_time=4,
         ratelimit_max=48,
         ratelimit_within=30,
-        ratelimit_maxsleeps=10):
+        ratelimit_maxsleeps=10,
+        ratelimit_enabled=True):
         self.user_agent = user_agent
         self.version = version
         self.session = Session()
@@ -18,6 +19,7 @@ class Api:
         self.ratelimitsleep_maxsleeps = ratelimit_maxsleeps
         self.ratelimit_max = ratelimit_max
         self.ratelimit_within = ratelimit_within
+        self.ratelimit_enabled = ratelimit_enabled
         self.xrls = 0
         self.rlobj = RateLimit()
 
@@ -62,3 +64,5 @@ class Api:
     def WorldAssembly(self, chamber):
     	return WorldAssemblyAPI(chamber, self)
     	
+    def Telegram(self, client_key=None, tgid=None, key=None):
+        return TelegramAPI(self, client_key, tgid, key)

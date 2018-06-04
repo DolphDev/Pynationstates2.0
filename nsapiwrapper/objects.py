@@ -277,3 +277,24 @@ class WorldAssemblyAPI(NationstatesAPI):
             self.chamber,
             shards,
             self.api_mother.version)
+
+class TelegramAPI(NationstatesAPI):
+    api_name = "a"
+    api_value = "sendTG"
+
+    def __init__(self, api_mother, client_key, tgid, key):
+        self.api_mother = api_mother
+        self.client_key = client_key
+        self.tgid = tgid
+        self.key = key
+
+    def url(self, shards):
+        return self._url(self.api_name,
+            self.api_value, 
+            [Shard(client=self.client_key, tgid=self.tgid, key=self.key, to=nation)],
+            self.api_mother.version)
+
+    def request(self, nation):
+        url = self.url(nation)
+        return self._request(None, url, self.api_name, self.api_value, self.api_mother.version)
+    """A Specialized API for telegrams"""

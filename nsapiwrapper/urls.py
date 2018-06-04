@@ -15,7 +15,10 @@ def shard_generator(shards):
         if isinstance(shard, str):
             yield shard
         elif isinstance(shard, Shard):
-            yield shard._get_main_value()
+            if shard._query_shard:
+                continue
+            else:
+                yield shard._get_main_value()
         else:
             raise ShardError("Shard can not be type: {}".format(type(shard)))
 
@@ -38,20 +41,19 @@ class Shard(object):
 
     """
 
-    def __init__(self, shard, **kwargs):
-        if isinstance(shard, str):
-            self.__call__(shard, **kwargs)
-        else:
-            raise ShardError(
-                "Invalid Argument 'shard' cant be {}".format(type(shard)))
+    def __init__(self, shard="",**kwargs):
 
-    def __call__(self, shard, **kwargs):
         if not isinstance(shard, str):
             raise ShardError(
                 "Invalid Argument 'shard' cant be {}. `shard` can only be {}"
                 .format(
                     type(shard), str))
-
+        if shard == "" and kwargs:
+            self._query_shard = True
+        elif not shard and not kwargs:
+            raise ValueError("Empty Shard")
+        else:
+            self._query_shard = False
         self.shardname = shard
         self._tags = OrderedDict(kwargs)
 
@@ -107,6 +109,8 @@ class Shard(object):
         return self.shardname
 
 
+
+
 API_URL = "www.nationstates.net/cgi-bin/api.cgi"
 
 
@@ -116,7 +120,9 @@ def gen_url(api, shards, version, API_URL=API_URL):
     else:
         url = Url(API_URL)
     if shards:
-        url.query(q=tuple(shard_generator(shards)))
+        shard_package = tuple(shard_generator(shards))
+        if shard_package:
+            url.query(q=shard_object_extract)
         url.query(
             **shard_object_extract(shards))
     if version:
