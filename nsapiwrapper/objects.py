@@ -1,33 +1,42 @@
 from bs4 import BeautifulSoup
 from time import time as timestamp
-
-from .exceptions import APIError, APIRateLimitBan, ConflictError, Forbidden, NotFound
+from xml.parsers.expat import ExpatError
+from .exceptions import APIError, APIRateLimitBan, BadRequest, CloudflareServerError, ConflictError, Forbidden, InternalServerError, NotFound
                         
 from .urls import gen_url, Shard
 
 def response_check(data):
-
-    xmlsoup = BeautifulSoup(data["xml"], "lxml")
+    def xmlsoup():
+        return BeautifulSoup(data["xml"], "lxml")
     if data["status"] == 409:
         raise ConflictError("Nationstates API has returned a Conflict Error.")
     if data["status"] == 400:
-        raise APIError(xmlsoup.h1.text)
+        raise BadRequest(xmlsoup().h1.text)
     if data["status"] == 403:
-        raise Forbidden(xmlsoup.h1.text)
+        raise Forbidden(xmlsoup().h1.text)
     if data["status"] == 404:
-        raise NotFound(xmlsoup.h1.text)
+        raise NotFound(xmlsoup().h1.text)
     if data["status"] == 429:
-        message = (
-            "Nationstates API has temporary banned this IP for Breaking the Rate Limit. Retry-After: {seconds}"
-                    .format(
-                       seconds=(data["response"]
-                                .headers["X-Retry-After"])))
-        raise APIRateLimitBan(message)
+        try:
+            message = (
+                "Nationstates API has temporary banned this IP for Breaking the Rate Limit. Retry-After: {seconds}"
+                        .format(
+                           seconds=(data["response"]
+                                    .headers["X-Retry-After"])))
+            raise APIRateLimitBan(message)
+        except KeyError:
+            # This currently handles telegrams
+            message = (
+                "{html_response} Retry-After: {seconds}"
+                        .format(html_response=xmlsoup().h1.text,
+                           seconds=(data["response"]
+                                    .headers["Retry-After"])))
+            raise APIRateLimitBan(message)    
     if data["status"] == 500:
         message = ("Nationstates API has returned a Internal Server Error")
-        raise APIError(message)
+        raise InternalServerError(message)
     if data["status"] == 521:
-        raise APIError(
+        raise CloudflareServerError(
             "Error 521: Cloudflare did not recieve a response from nationstates"
             )
 
@@ -118,23 +127,26 @@ class NationstatesAPI:
         return APIRequest(url, api_name, api_value, shards, version, request_headers)
 
     def _request_api(self, req):
+        self.api_mother.check_ratelimit()
         sess = self.api_mother.session
         headers = {"User-Agent":self.api_mother.user_agent}
         headers.update(req.custom_headers)
         return sess.get(req.url, headers=headers)
 
     def _handle_request(self, response, request_meta):
-
+        is_text = ""
         result = {
             "response": response,
             "xml": response.text,
             "request": request_meta,
             "status": response.status_code,
             "headers": response.headers,
-            "url": request_meta.url 
+            "url": request_meta.url
         }
         # Should this be here? Perhaps an argument
         response_check(result)
+
+
         self.api_mother.rate_limit(new_xrls=response.headers["X-ratelimit-requests-seen"])
 
         return result
@@ -235,7 +247,7 @@ class RegionAPI(NationstatesAPI):
         self.nation_name = nation_name
         super().__init__(api_mother)
 
-    def request(self, shards=[]):
+    def request(self, shards=tuple):
         url = self.url(shards)
         return self._request(shards, url, self.api_name, self.nation_name, self.api_mother.version)
 
@@ -251,7 +263,7 @@ class WorldAPI(NationstatesAPI):
     def __init__(self, api_mother):
         super().__init__(api_mother)
 
-    def request(self, shards=[]):
+    def request(self, shards=tuple()):
         url = self.url(shards)
         return self._request(shards, url, self.api_name, None, self.api_mother.version)
 
@@ -292,9 +304,9 @@ class TelegramAPI(NationstatesAPI):
     def url(self, shards):
         return self._url(self.api_name,
             self.api_value, 
-            [Shard(client=self.client_key, tgid=self.tgid, key=self.key, to=nation)],
+            [Shard(client=self.client_key, tgid=self.tgid, key=self.key, to=shards), shards] ,
             self.api_mother.version)
 
-    def request(self, nation):
-        url = self.url(nation)
-        return self._request(None, url, self.api_name, self.api_value, self.api_mother.version)
+    def request(self, shards):
+        url = self.url(shards)
+        return self._request(shards, url, self.api_name, self.api_value, self.api_mother.version)

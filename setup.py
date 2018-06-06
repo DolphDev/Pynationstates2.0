@@ -9,7 +9,7 @@ version = '0.0.1'
 from setuptools import setup
 setup(name='nsapiwrapper',
       install_requires=["beautifulsoup4==4.6.0", "ezurl==0.1.3.25",
-                        "requests==2.18.4"],
+                        "requests==2.18.4", "xmltodict==0.11.0"],
       version=version,
       description='Simple Nationstates API Wrapper',
       author='Joshua W',

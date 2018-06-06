@@ -2,12 +2,12 @@
 
 
 class NSBaseError(Exception):
-	"""Base Error for all custom exceptions"""
+    """Base Error for all custom exceptions"""
 
-	pass
+    pass
 
 class RateLimitReached(NSBaseError):
-	"""Rate Limit was reached"""
+    """Rate Limit was reached"""
 
 class NSServerBaseException(NSBaseError):
     """Exceptions that the server returns"""
@@ -30,4 +30,13 @@ class NotFound(APIError):
 
 class APIRateLimitBan(APIError):
     """Server has banned your IP"""
+    pass
+
+class InternalServerError(APIError):
+    pass
+
+class CloudflareServerError(APIError):
+    pass
+
+class BadRequest(APIError):
     pass

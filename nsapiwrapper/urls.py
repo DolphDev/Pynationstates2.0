@@ -1,6 +1,7 @@
 from ezurl import Url
 from collections import OrderedDict
 
+API_URL = "www.nationstates.net/cgi-bin/api.cgi"
 
 def shard_object_extract(shards):
     store = dict()
@@ -20,7 +21,7 @@ def shard_generator(shards):
             else:
                 yield shard._get_main_value()
         else:
-            raise ShardError("Shard can not be type: {}".format(type(shard)))
+            raise ValueError("Shard can not be type: {}".format(type(shard)))
 
 def shard_object_extract(shards):
     store = dict()
@@ -43,7 +44,7 @@ class Shard(object):
     def __init__(self, shard="",**kwargs):
 
         if not isinstance(shard, str):
-            raise ShardError(
+            raise ValueError(
                 "Invalid Argument 'shard' cant be {}. `shard` can only be {}"
                 .format(
                     type(shard), str))
@@ -107,12 +108,6 @@ class Shard(object):
     def _get_main_value(self):
         return self.shardname
 
-
-
-
-API_URL = "www.nationstates.net/cgi-bin/api.cgi"
-
-
 def gen_url(api, shards, version, API_URL=API_URL):
     if not api[0] == "world":
         url = Url(API_URL).query(**({api[0]: api[1]}))
@@ -121,7 +116,7 @@ def gen_url(api, shards, version, API_URL=API_URL):
     if shards:
         shard_package = tuple(shard_generator(shards))
         if shard_package:
-            url.query(q=shard_object_extract)
+            url.query(q=shard_package)
         url.query(
             **shard_object_extract(shards))
     if version:

@@ -2,14 +2,17 @@ from requests import Session
 from time import sleep
 from .objects import RateLimit, NationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI, TelegramAPI
 from .exceptions import RateLimitReached
+from .info import max_safe_requests, ratelimit_max, ratelimit_within, ratelimit_maxsleeps, ratelimit_sleep_time
+from .objects import RateLimit, NationAPI, PrivateNationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI
 
 class Api:
     def __init__(self, user_agent, version="9",
         ratelimit_sleep=False,
-        ratelimit_sleep_time=4,
-        ratelimit_max=48,
-        ratelimit_within=30,
-        ratelimit_maxsleeps=10,
+        ratelimit_sleep_time=ratelimit_sleep_time,
+        ratelimit_max=ratelimit_max,
+        ratelimit_within=ratelimit_within,
+        ratelimit_maxsleeps=ratelimit_maxsleeps,
+        max_safe_requests=max_safe_requests,
         ratelimit_enabled=True):
         self.user_agent = user_agent
         self.version = version
@@ -19,6 +22,7 @@ class Api:
         self.ratelimitsleep_maxsleeps = ratelimit_maxsleeps
         self.ratelimit_max = ratelimit_max
         self.ratelimit_within = ratelimit_within
+        self.max_safe_requests = max_safe_requests
         self.ratelimit_enabled = ratelimit_enabled
         self.xrls = 0
         self.rlobj = RateLimit()
@@ -34,14 +38,17 @@ class Api:
                 within_time=self.ratelimit_within)
 
     def check_ratelimit(self):
-        rlflag = self.check_ratelimit()
+        rlflag = self._check_ratelimit()
         if not rlflag:
-            if self.ratelimit_sleep:
+            if self.ratelimitsleep:
                 n = 0
-                while self._check_ratelimit():
+                while not self._check_ratelimit():
                     n = n + 1
-                    if n >= self.ratelimit_maxsleeps:
-                        break                        
+                    if n >= self.ratelimitsleep_maxsleeps:
+                        if self.max_safe_requests > self.ratelimit_max:
+                            break
+                        else:
+                            return True
                     sleep(self.ratelimitsleep_time)
                 else:
                     return True
@@ -62,7 +69,7 @@ class Api:
         return WorldAPI(self)
 
     def WorldAssembly(self, chamber):
-    	return WorldAssemblyAPI(chamber, self)
-    	
+        return WorldAssemblyAPI(chamber, self)
+
     def Telegram(self, client_key=None, tgid=None, key=None):
         return TelegramAPI(self, client_key, tgid, key)
