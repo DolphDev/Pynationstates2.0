@@ -279,6 +279,7 @@ class WorldAssemblyAPI(NationstatesAPI):
             self.api_mother.version)
 
 class TelegramAPI(NationstatesAPI):
+    """A Specialized API for telegrams"""
     api_name = "a"
     api_value = "sendTG"
 
@@ -297,4 +298,3 @@ class TelegramAPI(NationstatesAPI):
     def request(self, nation):
         url = self.url(nation)
         return self._request(None, url, self.api_name, self.api_value, self.api_mother.version)
-    """A Specialized API for telegrams"""
