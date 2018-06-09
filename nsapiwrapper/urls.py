@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 API_URL = "www.nationstates.net/cgi-bin/api.cgi"
 
+
 def shard_object_extract(shards):
     store = dict()
     for shard in shards:

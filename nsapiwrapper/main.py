@@ -38,6 +38,8 @@ class Api:
                 within_time=self.ratelimit_within)
 
     def check_ratelimit(self):
+        if not self.ratelimit_enabled:
+            return True
         rlflag = self._check_ratelimit()
         if not rlflag:
             if self.ratelimitsleep:
