@@ -32,6 +32,9 @@ class APIRateLimitBan(APIError):
     """Server has banned your IP"""
     pass
 
+class APIUsageError(APIError):
+    pass
+
 class InternalServerError(APIError):
     pass
 
