@@ -143,7 +143,7 @@ class NationstatesAPI:
             "headers": response.headers,
             "url": request_meta.url
         }
-        # Should this be here? Perhaps an argument
+        # Should this be here? Perhaps an argument to disable it
         response_check(result)
 
 
@@ -197,9 +197,26 @@ class PrivateNationAPI(NationAPI):
         self.pin = None
         super().__init__(nation_name, api_mother)
 
-    def request(self, shards=[], allow_sleep=False):
+    def request(self, shards=[]):
 
         pin_used = bool(self.pin)
+        custom_headers = self._get_pin_headers() 
+        url = self.url(shards)
+        try:
+            response = self._request(shards, url, self.api_name, self.nation_name, self.api_mother.version, request_headers=custom_headers)
+        except Forbidden as exc:
+            # PIN is wrong or login is wrong
+            if pin_used:
+                self.pin = None
+                return self.request(self, shards, allow_sleep)
+            else:
+                raise exc
+            
+        self._setup_pin(response)
+        return response
+
+    def _get_pin_headers(self):
+        """Process Login data to give to the request"""
         if self.pin:
             custom_headers={"Pin": self.pin}
         else:
@@ -207,25 +224,7 @@ class PrivateNationAPI(NationAPI):
                 custom_headers={"Autologin":self.autologin}
             elif self.password:
                 custom_headers = {"Password": self.password}
-        url = self.url(shards)
-        try:
-            response = self._request(shards, url, self.api_name, self.nation_name, self.api_mother.version, request_headers=custom_headers)
-        except Forbidden:
-            # PIN is wrong or login is wrong
-            if pin_used:
-                self.pin = None
-                return self.request(self, shards, allow_sleep)
-            else:
-                raise Forbidden("Password or Autologin code was not correct, server returned 403")
-        except ConflictError as exc:
-            if allow_sleep:
-                # sleep code
-                pass
-            else:
-                raise exc
-            
-        self._setup_pin(response)
-        return response
+        return custom_headers
 
     def _setup_pin(self, response):
         # sets up pin
