@@ -1,9 +1,9 @@
 from requests import Session
-from time import sleep
 from .objects import RateLimit, NationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI, TelegramAPI
 from .exceptions import RateLimitReached
 from .info import max_safe_requests, ratelimit_max, ratelimit_within, ratelimit_maxsleeps, ratelimit_sleep_time
 from .objects import RateLimit, NationAPI, PrivateNationAPI, RegionAPI, WorldAPI, WorldAssemblyAPI
+from .utils import sleep_thread
 
 class Api:
     def __init__(self, user_agent, version="9",
@@ -38,9 +38,10 @@ class Api:
                 within_time=self.ratelimit_within)
 
     def check_ratelimit(self):
+        "Check's the ratelimit"
+        rlflag = self._check_ratelimit()
         if not self.ratelimit_enabled:
             return True
-        rlflag = self._check_ratelimit()
         if not rlflag:
             if self.ratelimitsleep:
                 n = 0
@@ -51,7 +52,7 @@ class Api:
                             break
                         else:
                             return True
-                    sleep(self.ratelimitsleep_time)
+                    sleep_thread(self.ratelimitsleep_time)
                 else:
                     return True
             raise RateLimitReached("The Rate Limit was too close the API limit to safely handle this request")

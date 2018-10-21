@@ -1,5 +1,5 @@
-""" Useful functions for dealing with the API response"""
-
+""" Useful functions for dealing with the API response or other functionality"""
+from time import sleep
 from xmltodict import parse
 
 
@@ -31,3 +31,8 @@ def _parsedict(x, dicttype):
 def parsetree(xml, dicttype=dict):
     """Converts xml to a simple dicttypeionary"""
     return _parsedict(parse(xml), dicttype)
+
+def sleep_thread(n):
+    """All Sleep code will be in here, to allow uniform behavior
+     if changes are needed"""
+    sleep(n)

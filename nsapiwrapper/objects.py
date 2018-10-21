@@ -143,11 +143,11 @@ class NationstatesAPI:
             "headers": response.headers,
             "url": request_meta.url
         }
-        # Should this be here? Perhaps an argument to disable it
-        response_check(result)
-
 
         self.api_mother.rate_limit(new_xrls=response.headers["X-ratelimit-requests-seen"])
+       
+        # Should this be here? Perhaps an argument to disable it
+        response_check(result)
 
         return result
 
@@ -208,7 +208,7 @@ class PrivateNationAPI(NationAPI):
             # PIN is wrong or login is wrong
             if pin_used:
                 self.pin = None
-                return self.request(self, shards, allow_sleep)
+                return self.request(self, shards)
             else:
                 raise exc
             
