@@ -3,7 +3,6 @@
 
 class NSBaseError(Exception):
     """Base Error for all custom exceptions"""
-
     pass
 
 class RateLimitReached(NSBaseError):

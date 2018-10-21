@@ -4,7 +4,7 @@ Copyright (c) 2016, 2017, 2018 Joshua Walters
 """
 
 
-version = '0.0.1'
+version = '0.0.1alpha'
 
 from setuptools import setup
 setup(name='nsapiwrapper',
