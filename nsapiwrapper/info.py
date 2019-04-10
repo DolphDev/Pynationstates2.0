@@ -1,3 +1,5 @@
+# This file contains defaults that this module uses
+
 # Max allowed for assumed safe request, any higher than this
 # Will raise a RateLimitReached Exception
 # If the rate limiter cant assume a safe request

@@ -4,6 +4,9 @@ from xml.parsers.expat import ExpatError
 from .exceptions import APIError, APIRateLimitBan, BadRequest, CloudflareServerError, ConflictError, Forbidden, InternalServerError, NotFound
                         
 from .urls import gen_url, Shard
+from threading import RLock
+
+RateLimitStateEditLock = RLock()
 
 def response_check(data):
     def xmlsoup():
@@ -60,44 +63,49 @@ class RateLimit:
         self.rlref = val
 
     def ratelimitcheck(self, amount_allow=48, within_time=30, xrls=0):
-        """Checks if nsapiwrapper needs pause to prevent api banning"""
+        """Checks if nsapiwrapper needs pause to prevent api banning
 
-        if xrls >= amount_allow:
-            pre_raf = xrls - (xrls - len(self.rltime))
-            currenttime = timestamp()
-            try:
-                while (self.rltime[-1]+within_time) < currenttime:
-                    del self.rltime[-1]
-                post_raf = xrls - (xrls - len(self.rltime))
-                diff = pre_raf - post_raf
-                nxrls = xrls - diff
-                if nxrls >= amount_allow:
-                    return False
-                else:
-                    return True
-            except IndexError as err:
-                if (xrls - pre_raf) >= amount_allow:
-                    return False
-                else:
-                    return True
-        else:
-            self.cleanup()
-            return True
+            Side Effects: Also calls .cleanup() when returning True
+        """
+        with RateLimitStateEditLock:
+            if xrls >= amount_allow:
+                pre_raf = xrls - (xrls - len(self.rltime))
+                currenttime = timestamp()
+                try:
+                    while (self.rltime[-1]+within_time) < currenttime:
+                        del self.rltime[-1]
+                    post_raf = xrls - (xrls - len(self.rltime))
+                    diff = pre_raf - post_raf
+                    nxrls = xrls - diff
+                    if nxrls >= amount_allow:
+                        return False
+                    else:
+                        return True
+                except IndexError as err:
+                    if (xrls - pre_raf) >= amount_allow:
+                        return False
+                    else:
+                        return True
+            else:
+                self.cleanup()
+                return True
 
     def cleanup(self, amount_allow=50, within_time=30):
         """To prevent the list from growing forever when there isn't enough requests to force it
             cleanup"""
-        try:
-            currenttime = timestamp()
-            while (self.rltime[-1]+within_time) < currenttime:
-                del self.rltime[-1]
-        except IndexError as err:
-            #List is empty, pass
-            pass
+        with RateLimitStateEditLock:
+            try:
+                currenttime = timestamp()
+                while (self.rltime[-1]+within_time) < currenttime:
+                    del self.rltime[-1]
+            except IndexError as err:
+                #List is empty, pass
+                pass
 
     def add_timestamp(self):
         """Adds timestamp to rltime"""
-        self.rltime = [timestamp()] + self.rltime
+        with RateLimitStateEditLock:
+            self.rltime = [timestamp()] + self.rltime
 
 class APIRequest:
     """Data Class for this library"""

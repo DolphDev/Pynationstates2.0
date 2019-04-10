@@ -35,4 +35,5 @@ def parsetree(xml, dicttype=dict):
 def sleep_thread(n):
     """All Sleep code will be in here, to allow uniform behavior
      if changes are needed"""
+    # Currently we just python's built in sleep library
     sleep(n)
