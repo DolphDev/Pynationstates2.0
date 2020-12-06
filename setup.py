@@ -4,12 +4,12 @@ Copyright (c) 2019 Joshua W
 """
 
 
-version = '0.1.3'
+version = '0.0.2'
 
 from setuptools import setup
 setup(name='nsapiwrapper',
       install_requires=["beautifulsoup4==4.8.0", "ezurl==0.1.3.25",
-                        "requests==2.22.*", "xmltodict==0.12.0", "lxml==4.4.1" ],
+                        "requests==2.22.*", "xmltodict==0.12.0", "lxml==4.6.2" ],
       version=version,
       description='Simple Nationstates API Wrapper',
       author='Joshua W',
